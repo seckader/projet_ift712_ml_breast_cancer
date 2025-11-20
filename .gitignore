@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pkl
+*.joblib
+*.DS_Store
+
+# Envs
+.venv/
+.env
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Data & Artifacts
+data/raw/*
+data/interim/*
+data/processed/*
+!data/**/.gitkeep
+
+models/artifacts/*
+models/reports/*
+!models/**/.gitkeep
