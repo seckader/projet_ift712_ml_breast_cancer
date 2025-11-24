@@ -1,0 +1,6 @@
+knn:
+  use_standard_scaler: true
+  grid:
+    n_neighbors: [3, 5, 7, 9]
+    weights: ["uniform", "distance"]
+    p: [1, 2]

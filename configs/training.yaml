@@ -1,0 +1,5 @@
+random_seed: 42
+cv_folds: 5
+test_size: 0.2
+scorer: "f1_macro"
+n_jobs: -1
