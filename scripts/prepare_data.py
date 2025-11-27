@@ -1,23 +1,25 @@
-# scripts/prepare_data.py
 from __future__ import annotations
+
+import sys, os
+sys.path.append(os.path.abspath("."))
+
 from src.data.data_loader import load_dataset
 from src.data.split import make_splits
 from src.utils.io import save_csv
-from src.config.config import load_dataset_config
 from src.utils.logging import get_logger
 
 logger = get_logger("prepare")
 
 
 def main():
-    df = load_dataset()
-    logger.info(f"Dataset chargé avec shape={df.shape}")
+    data_frame = load_dataset()
+    logger.info(f"Dataset chargé avec shape={data_frame.shape}")
 
     # Sauvegarde d'une version "processed" complète
-    save_csv(df, "data/processed/full.csv")
+    save_csv(data_frame, "data/processed/full.csv")
 
     # Création des splits train / test
-    make_splits(df)
+    make_splits(data_frame)
     logger.info("Fichiers data/interim/train.csv et data/interim/test.csv créés.")
 
 

@@ -8,17 +8,17 @@ from src.utils.io import save_csv
 
 def make_splits(df: pd.DataFrame) -> None:
     """Crée les fichiers train.csv et test.csv dans data/interim/."""
-    dcfg = load_dataset_config()
-    tcfg = load_training_config()
+    data_config = load_dataset_config()
+    training_config = load_training_config()
 
-    X = df.drop(columns=[dcfg.target])
-    y = df[dcfg.target]
+    X = df.drop(columns=[data_config.target])
+    y = df[data_config.target]
 
     X_train, X_test, y_train, y_test = train_test_split(
         X,
         y,
-        test_size=tcfg.test_size,
-        random_state=tcfg.random_seed,
+        test_size = training_config.test_size,
+        random_state = training_config.random_seed,
         stratify=y,
     )
 
