@@ -1,0 +1,8 @@
+target: "target"
+
+use_sklearn_loader: true
+csv_path: "data/raw/breast_cancer.csv"
+
+numeric_features: []
+categorical_features: []
+drop_columns: []
