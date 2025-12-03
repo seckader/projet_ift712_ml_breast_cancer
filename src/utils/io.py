@@ -1,25 +1,24 @@
-from __future__ import annotations
-import os
+"""
+Utility functions for saving data (CSV, text) in a consistent way.
+"""
+
+from pathlib import Path
+
 import pandas as pd
-import joblib
-from .paths import path_join
 
-def save_csv(df: pd.DataFrame, rel_path: str) -> str:
-    path = path_join(rel_path)
-    os.makedirs(os.path.dirname(path), exist_ok=True)
+
+def save_csv(df: pd.DataFrame, path: Path) -> None:
+    """
+    Save a pandas DataFrame as a CSV file.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(path, index=False)
-    return path
 
-def load_csv(rel_path: str) -> pd.DataFrame:
-    path = path_join(rel_path)
-    return pd.read_csv(path)
 
-def save_artifact(obj, rel_path: str) -> str:
-    path = path_join(rel_path)
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    joblib.dump(obj, path)
-    return path
-
-def load_artifact(rel_path: str):
-    path = path_join(rel_path)
-    return joblib.load(path)
+def save_text(text: str, path: Path) -> None:
+    """
+    Save a string into a plain text file.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(text)
