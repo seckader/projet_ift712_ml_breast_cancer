@@ -8,6 +8,7 @@ CONFIG_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "configs")
 
 @dataclass
 class DatasetConfig:
+    """Configuration liée au jeu de données."""
     target: str
     use_sklearn_loader: bool = True
     csv_path: str = "data/raw/breast_cancer.csv"
@@ -18,17 +19,22 @@ class DatasetConfig:
 
 @dataclass
 class TrainingConfig:
-    random_seed: int
-    cv_folds: int
-    test_size: float
-    scorer: str
-    n_jobs: int
+    """Configuration globale d'entraînement et de validation."""
+    random_seed: int = 42
+    cv_folds: int = 5
+    test_size: float = 0.2
+    scorer: str = "f1_macro"
+    n_jobs: int = -1
 
 
-def _load_yaml(name: str) -> dict:
-    path = os.path.join(CONFIG_DIR, name)
+def _load_yaml(filename: str) -> dict:
+    """Charge un fichier YAML à partir du dossier configs/ et retourne un dict."""
+    path = os.path.join(CONFIG_DIR, filename)
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"Fichier de configuration introuvable : {path}")
     with open(path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f) or {}
+        data = yaml.safe_load(f) or {}
+    return data
 
 
 def load_dataset_config() -> DatasetConfig:
