@@ -1,6 +1,11 @@
-knn:
-  use_standard_scaler: true
-  grid:
-    n_neighbors: [3, 5, 7, 9]
-    weights: ["uniform", "distance"]
-    p: [1, 2]
+models:
+  naive_bayes:
+    enabled: true
+    class_path: "src.models.naive_bayes.NaiveBayesClassifier"
+    use_scaler: false
+    hyperparameters:
+      var_smoothing:
+        - 1.0e-9
+        - 1.0e-8
+        - 1.0e-7
+        - 1.0e-6

@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix, classification_report
 
+
 def plot_confusion_matrix(y_true, y_pred, title: str, out_path: str):
     cm = confusion_matrix(y_true, y_pred)
     disp = ConfusionMatrixDisplay(confusion_matrix=cm)
@@ -10,6 +11,7 @@ def plot_confusion_matrix(y_true, y_pred, title: str, out_path: str):
     ax.set_title(title)
     fig.savefig(out_path, bbox_inches="tight")
     plt.close(fig)
+
 
 def save_classification_report(y_true, y_pred, target_names, out_path: str):
     report = classification_report(y_true, y_pred, target_names=target_names)
