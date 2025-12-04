@@ -9,3 +9,17 @@ models:
         - 1.0e-8
         - 1.0e-7
         - 1.0e-6
+  svm:
+    enabled: true
+    class_path: "src.models.svm.SVMClassifier"
+    use_scaler: true
+    hyperparameters:
+      C:
+        - 0.1
+        - 1.0
+        - 10.0
+      kernel:
+        - "rbf"
+      gamma:
+        - "scale"
+        - "auto"
