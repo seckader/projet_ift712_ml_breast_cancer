@@ -8,6 +8,9 @@ Evaluation script:
 import joblib
 import pandas as pd
 
+import sys, os
+sys.path.append(os.path.abspath("."))
+
 from src.config.config import Config
 from src.data.data_loader import get_features_and_target
 from src.evaluation.metrics import compute_classification_metrics

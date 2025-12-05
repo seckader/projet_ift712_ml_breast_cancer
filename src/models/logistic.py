@@ -1,41 +1,44 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any, Dict
 
+from sklearn.base import BaseEstimator
 from sklearn.linear_model import LogisticRegression
-from sklearn.pipeline import Pipeline
 
-from src.config.config import TrainingConfig
-from src.models.base_model import BaseModel
+from src.models.base_model import BaseClassifier
 
 
-@dataclass
-class LogisticRegressionModel(BaseModel):
-    """Régression logistique pour la classification du cancer du sein.
-
-    Le modèle est entraîné via :meth:`fit_with_cv`, qui effectue
-    une recherche d'hyperparamètres avec validation croisée stratifiée.
+class LogisticRegressionModel(BaseClassifier):
+    """
+    Implémentation conforme à BaseClassifier pour la régression logistique.
     """
 
-    def __init__(self, training_config: TrainingConfig, param_grid: Dict[str, Any]):
-        super().__init__(
-            name="logistic",
-            training_config=training_config,
-            param_grid=param_grid,
+    name = "logistic"
+
+    def __init__(self, hyperparameters: Dict[str, Any] | None = None) -> None:
+        """
+        hyperparameters vient de models.yaml (section logistic.grid ou logistic.hyperparameters,
+        selon comment ton Config le construit).
+        On les stocke pour construire la grille dans hyperparam_grid().
+        """
+        self.hyperparameters = hyperparameters or {}
+
+    def build_estimator(self) -> BaseEstimator:
+        """
+        Construit l'estimateur sklearn de base.
+        Les hyperparamètres seront ajustés par GridSearchCV via hyperparam_grid().
+        """
+        return LogisticRegression(
+            max_iter=1000,  
+            multi_class="auto"
         )
 
-    def build_pipeline(self, preprocessor) -> Pipeline:
-        clf = LogisticRegression(
-            max_iter=1000,
-            multi_class="auto",
-            n_jobs=self.training_config.n_jobs,
-            random_state=self.training_config.random_seed,
-        )
-        pipe = Pipeline(
-            steps=[
-                ("preprocessor", preprocessor),
-                ("clf", clf),
-            ]
-        )
-        return pipe
+    def hyperparam_grid(self) -> Dict[str, Any]:
+        """
+        Transforme le dict d'hyperparamètres (venant du YAML) en noms compatibles
+        avec le Pipeline : 'classifier__C', 'classifier__penalty', etc.
+        """
+        return {
+            f"classifier__{k}": v
+            for k, v in self.hyperparameters.items()
+        }
