@@ -1,51 +1,93 @@
-from __future__ import annotations
-from dataclasses import dataclass, field
-import os
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Dict
+
 import yaml
 
-CONFIG_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "configs")
+from src.utils.paths import CONFIG_DIR
 
 
 @dataclass
 class DatasetConfig:
-    """Configuration liée au jeu de données."""
-    target: str
-    use_sklearn_loader: bool = True
-    csv_path: str = "data/raw/breast_cancer.csv"
-    numeric_features: list[str] = field(default_factory=list)
-    categorical_features: list[str] = field(default_factory=list)
-    drop_columns: list[str] = field(default_factory=list)
+    name: str
+    target_column: str
+    id_column: str | None
+    numerical_features: list[str]
+    categorical_features: list[str]
 
 
 @dataclass
 class TrainingConfig:
-    """Configuration globale d'entraînement et de validation."""
-    random_seed: int = 42
-    cv_folds: int = 5
-    test_size: float = 0.2
-    scorer: str = "f1_macro"
-    n_jobs: int = -1
+    test_size: float
+    random_state: int
+    scoring: str
+    n_jobs: int
+    refit_metric: str
+    cv: Dict[str, Any]
 
 
-def _load_yaml(filename: str) -> dict:
-    """Charge un fichier YAML à partir du dossier configs/ et retourne un dict."""
-    path = os.path.join(CONFIG_DIR, filename)
-    if not os.path.exists(path):
-        raise FileNotFoundError(f"Fichier de configuration introuvable : {path}")
-    with open(path, "r", encoding="utf-8") as f:
-        data = yaml.safe_load(f) or {}
-    return data
+@dataclass
+class ModelConfig:
+    name: str
+    class_path: str
+    enabled: bool
+    use_scaler: bool
+    hyperparameters: Dict[str, Any]
 
 
-def load_dataset_config() -> DatasetConfig:
-    data = _load_yaml("dataset.yaml")
-    return DatasetConfig(**data)
+@dataclass
+class ModelsConfig:
+    models: Dict[str, ModelConfig]
 
 
-def load_training_config() -> TrainingConfig:
-    data = _load_yaml("training.yaml")
-    return TrainingConfig(**data)
+class Config:
+    """
+    Main configuration loader for the project.
+    Loads dataset.yaml, training.yaml, models.yaml.
+    """
 
+    def __init__(self) -> None:
+        self.dataset = self._load_dataset_config()
+        self.training = self._load_training_config()
+        self.models = self._load_models_config()
 
-def load_models_config() -> dict:
-    return _load_yaml("models.yaml")
+    @staticmethod
+    def _load_yaml(path: Path) -> Dict[str, Any]:
+        with path.open("r", encoding="utf-8") as f:
+            return yaml.safe_load(f)
+
+    def _load_dataset_config(self) -> DatasetConfig:
+        data = self._load_yaml(CONFIG_DIR / "dataset.yaml")
+        return DatasetConfig(
+            name=data["name"],
+            target_column=data["target_column"],
+            id_column=data.get("id_column"),
+            numerical_features=data.get("numerical_features", []),
+            categorical_features=data.get("categorical_features", []),
+        )
+
+    def _load_training_config(self) -> TrainingConfig:
+        data = self._load_yaml(CONFIG_DIR / "training.yaml")
+        return TrainingConfig(
+            test_size=data["test_size"],
+            random_state=data["random_state"],
+            scoring=data["scoring"],
+            n_jobs=data["n_jobs"],
+            refit_metric=data["refit_metric"],
+            cv=data["cv"],
+        )
+
+    def _load_models_config(self) -> ModelsConfig:
+        data = self._load_yaml(CONFIG_DIR / "models.yaml")
+        model_dict: Dict[str, ModelConfig] = {}
+
+        for name, cfg in data["models"].items():
+            model_dict[name] = ModelConfig(
+                name=name,
+                class_path=cfg["class_path"],
+                enabled=cfg.get("enabled", True),
+                use_scaler=cfg.get("use_scaler", False),
+                hyperparameters=cfg.get("hyperparameters", {}),
+            )
+
+        return ModelsConfig(models=model_dict)

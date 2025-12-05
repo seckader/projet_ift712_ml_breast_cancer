@@ -1,26 +1,29 @@
-from __future__ import annotations
+"""
+Data preparation script:
+- Load the raw breast cancer dataset (from sklearn)
+- Create train/test splits
+"""
 
-import sys, os
-sys.path.append(os.path.abspath("."))
-
-from src.data.data_loader import load_dataset
-from src.data.split import make_splits
-from src.utils.io import save_csv
+from src.config.config import Config
+from src.data.data_loader import load_raw_dataset
+from src.data.split import create_train_test_split
 from src.utils.logging import get_logger
 
-logger = get_logger("prepare")
+logger = get_logger(__name__)
 
 
-def main():
-    data_frame = load_dataset()
-    logger.info(f"Dataset chargé avec shape={data_frame.shape}")
+def main() -> None:
+    """
+    Main entry point for the prepare_data script.
+    """
+    config = Config()
 
-    # Sauvegarde d'une version "processed" complète
-    save_csv(data_frame, "data/processed/full.csv")
+    logger.info("Preparing data for dataset '%s'.", config.dataset.name)
 
-    # Création des splits train / test
-    make_splits(data_frame)
-    logger.info("Fichiers data/interim/train.csv et data/interim/test.csv créés.")
+    df_raw = load_raw_dataset(config)
+    create_train_test_split(config, df_raw)
+
+    logger.info("Data preparation completed successfully.")
 
 
 if __name__ == "__main__":

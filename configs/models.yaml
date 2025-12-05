@@ -1,14 +1,33 @@
-knn:
-  use_standard_scaler: true
-  grid:
-    n_neighbors: [3, 5, 7, 9]
-    weights: ["uniform", "distance"]
-    p: [1, 2]
-    
-logistic:
-  use_standard_scaler: true
-  grid:
-    penalty: ["l2"]
-    C: [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
-    solver: ["lbfgs"]
-    max_iter: [1000]
+models:
+  naive_bayes:
+    enabled: true
+    class_path: "src.models.naive_bayes.NaiveBayesClassifier"
+    use_scaler: false
+    hyperparameters:
+      var_smoothing:
+        - 1.0e-9
+        - 1.0e-8
+        - 1.0e-7
+        - 1.0e-6
+  svm:
+    enabled: true
+    class_path: "src.models.svm.SVMClassifier"
+    use_scaler: true
+    hyperparameters:
+      C:
+        - 0.1
+        - 1.0
+        - 10.0
+      kernel:
+        - "rbf"
+      gamma:
+        - "scale"
+        - "auto"
+        
+  logistic:
+    use_standard_scaler: true
+    grid:
+      penalty: ["l2"]
+      C: [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
+      solver: ["lbfgs"]
+      max_iter: [1000]      
