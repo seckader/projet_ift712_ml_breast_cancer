@@ -1,106 +1,105 @@
-from __future__ import annotations
+"""
+Training script:
+- Load configs
+- Build preprocessing + Naive Bayes pipeline
+- Run GridSearchCV
+- Save the best model and CV results
+"""
 
-import argparse
-import os
-import sys
-from typing import Iterable, List
+import importlib
 
-sys.path.append(os.path.abspath("."))
+import pandas as pd
+from joblib import dump
 
-from src.config.config import (
-    load_dataset_config,
-    load_training_config,
-    load_models_config,
-)
-from src.features.preprocessing import build_preprocessor
-from src.models.registry import build_model, get_available_models
-from src.utils.io import load_csv, save_artifact
+from src.config.config import Config, ModelConfig
+from src.data.data_loader import get_features_and_target, auto_detect_columns
+from src.features.preprocessing import build_preprocessor, build_pipeline
+from src.evaluation.tuning import build_grid_search
+from src.utils.io import save_csv
 from src.utils.logging import get_logger
-from src.utils.paths import path_join
-from src.utils.plotting import plot_confusion_matrix, save_classification_report
+from src.utils.paths import DATA_INTERIM_DIR, MODELS_ARTIFACTS_DIR, MODELS_REPORTS_DIR
 
-logger = get_logger("train")
-
-
-def run_training_for_models(model_names: Iterable[str]) -> None:
-    """Entraîne et évalue une liste de modèles."""
-    dataset_cfg = load_dataset_config()
-    training_cfg = load_training_config()
-    models_cfg = load_models_config()
-
-    train_df = load_csv("data/interim/train.csv")
-    test_df = load_csv("data/interim/test.csv")
-
-    X_train = train_df.drop(columns=[dataset_cfg.target])
-    y_train = train_df[dataset_cfg.target]
-    X_test = test_df.drop(columns=[dataset_cfg.target])
-    y_test = test_df[dataset_cfg.target]
-
-    logger.info("Shape train=%s, test=%s", X_train.shape, X_test.shape)
-
-    preprocessor, numeric_features = build_preprocessor(train_df, dataset_cfg)
-    logger.info("Features numériques utilisées : %s", numeric_features)
-
-    for name in model_names:
-        logger.info("=== Entraînement du modèle '%s' ===", name)
-        model = build_model(name, training_cfg, models_cfg)
-        model.fit_with_cv(X_train, y_train, preprocessor)
-
-        y_pred = model.predict(X_test)
-
-        out_dir = path_join("models", "artifacts", name)
-        os.makedirs(out_dir, exist_ok=True)
-
-        save_artifact(model, os.path.join(out_dir, "model.joblib"))
-
-        cm_path = os.path.join(out_dir, "confusion_matrix.png")
-        plot_confusion_matrix(
-            y_true=y_test,
-            y_pred=y_pred,
-            title=f"{name} – Breast Cancer (test)",
-            out_path=cm_path,
-        )
-
-        report_path = os.path.join(out_dir, "classification_report.txt")
-        target_names = [str(c) for c in sorted(y_test.unique())]
-        save_classification_report(
-            y_true=y_test,
-            y_pred=y_pred,
-            target_names=target_names,
-            out_path=report_path,
-        )
-
-        logger.info(
-            "Modèle '%s' entraîné. Artefacts sauvegardés dans %s", name, out_dir
-        )
+logger = get_logger(__name__)
 
 
-def _parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="IFT712 – Entraînement de modèles de classification."
+def _import_model_class(class_path: str):
+    """
+    Dynamically import a model class from its full class path.
+    """
+    module_name, class_name = class_path.rsplit(".", maxsplit=1)
+    module = importlib.import_module(module_name)
+    return getattr(module, class_name)
+
+
+def train_single_model(
+    config: Config,
+    model_cfg: ModelConfig,
+    train_df: pd.DataFrame,
+) -> None:
+    """
+    Train a single model using GridSearchCV.
+    """
+    logger.info("===== Training model: %s =====", model_cfg.name)
+
+    # 1) Auto-detect feature columns from the training data
+    auto_detect_columns(config, train_df)
+
+    # 2) Split features/target
+    X, y = get_features_and_target(config, train_df)
+
+    # 3) Build preprocessor using the detected features
+    preprocessor = build_preprocessor(
+        dataset_cfg=config.dataset,
+        use_scaler=model_cfg.use_scaler,
     )
-    parser.add_argument(
-        "--models",
-        type=str,
-        default="all",
-        help=(
-            "Liste de modèles à entraîner, séparés par des virgules "
-            f"(disponibles: {', '.join(get_available_models())}), "
-            "ou 'all' pour tous."
-        ),
+
+    ModelClass = _import_model_class(model_cfg.class_path)
+    model_wrapper = ModelClass(hyperparameters=model_cfg.hyperparameters)
+
+    estimator = model_wrapper.build_estimator()
+    pipeline = build_pipeline(preprocessor, estimator)
+    param_grid = model_wrapper.hyperparam_grid()
+
+    grid_search = build_grid_search(
+        pipeline=pipeline,
+        param_grid=param_grid,
+        training_cfg=config.training,
     )
-    return parser.parse_args()
+
+    grid_search.fit(X, y)
+
+    logger.info("Best params: %s", grid_search.best_params_)
+    logger.info(
+        "Best %s score: %.4f",
+        config.training.refit_metric,
+        grid_search.best_score_,
+    )
+
+    MODELS_ARTIFACTS_DIR.mkdir(parents=True, exist_ok=True)
+    model_path = MODELS_ARTIFACTS_DIR / f"{model_cfg.name}_best.joblib"
+    dump(grid_search.best_estimator_, model_path)
+    logger.info("Best model saved to %s", model_path)
+
+    MODELS_REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+    cv_results_path = MODELS_REPORTS_DIR / f"{model_cfg.name}_cv_results.csv"
+    save_csv(pd.DataFrame(grid_search.cv_results_), cv_results_path)
+    logger.info("CV results saved to %s", cv_results_path)
 
 
-def main() -> None:
-    args = _parse_args()
-    if args.models == "all":
-        models_to_run: List[str] = get_available_models()
-    else:
-        models_to_run = [m.strip() for m in args.models.split(",") if m.strip()]
+def main():
+    config = Config()
 
-    logger.info("Modèles sélectionnés : %s", models_to_run)
-    run_training_for_models(models_to_run)
+    train_path = DATA_INTERIM_DIR / "train.csv"
+    if not train_path.exists():
+        raise FileNotFoundError("Run scripts.prepare_data first.")
+
+    train_df = pd.read_csv(train_path)
+
+    for model_name, model_cfg in config.models.models.items():
+        if not model_cfg.enabled:
+            logger.info("Model %s disabled, skipping.", model_name)
+            continue
+        train_single_model(config, model_cfg, train_df)
 
 
 if __name__ == "__main__":

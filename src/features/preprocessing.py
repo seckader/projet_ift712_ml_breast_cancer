@@ -1,36 +1,51 @@
-from __future__ import annotations
+from typing import List
 
-from typing import Tuple
-
-import pandas as pd
 from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
 from src.config.config import DatasetConfig
 
 
 def build_preprocessor(
-    df: pd.DataFrame, cfg: DatasetConfig
-) -> Tuple[ColumnTransformer, list[str]]:
-    """Construit le préprocesseur pour le jeu de données.
-
-    Actuellement :
-    - standardisation des variables numériques.
-
-    Les colonnes numériques sont soit :
-    - données explicitement dans cfg.numeric_features, soit
-    - toutes les colonnes non-cible si cette liste est vide.
+    dataset_cfg: DatasetConfig,
+    use_scaler: bool,
+) -> ColumnTransformer:
     """
-    if cfg.numeric_features:
-        numeric_features = cfg.numeric_features
-    else:
-        numeric_features = [c for c in df.columns if c != cfg.target]
+    Build a ColumnTransformer that applies preprocessing to the features.
+    """
+    numeric_features: List[str] = dataset_cfg.numerical_features
+    categorical_features: List[str] = dataset_cfg.categorical_features
 
-    preprocessor = ColumnTransformer(
-        transformers=[
-            ("num", StandardScaler(), numeric_features),
-        ],
-        remainder="drop",
+    transformers = []
+
+    if numeric_features:
+        if use_scaler:
+            transformers.append(
+                ("num", StandardScaler(), numeric_features)
+            )
+        else:
+            transformers.append(
+                ("num", "passthrough", numeric_features)
+            )
+
+    if categorical_features:
+        transformers.append(
+            ("cat", "passthrough", categorical_features)
+        )
+
+    preprocessor = ColumnTransformer(transformers=transformers)
+
+    return preprocessor
+
+
+def build_pipeline(preprocessor: ColumnTransformer, estimator) -> Pipeline:
+    """
+    Build a sklearn Pipeline: preprocessing -> classifier.
+    """
+    return Pipeline(
+        steps=[
+            ("preprocessor", preprocessor),
+            ("classifier", estimator),
+        ]
     )
-
-    return preprocessor, numeric_features
