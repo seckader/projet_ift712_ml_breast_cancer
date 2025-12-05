@@ -1,3 +1,10 @@
+"""
+Evaluation script:
+- Load trained pipelines from disk
+- Evaluate them on the test set
+- Save metrics, confusion matrix, classification report
+"""
+
 import joblib
 import pandas as pd
 

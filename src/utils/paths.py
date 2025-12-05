@@ -21,6 +21,7 @@ MODELS_REPORTS_DIR = MODELS_DIR / "reports"
 NOTEBOOKS_DIR = PROJECT_ROOT / "notebooks"
 
 
+# Backward-compatible helpers (if some old code uses them)
 def project_root() -> str:
     return str(PROJECT_ROOT)
 

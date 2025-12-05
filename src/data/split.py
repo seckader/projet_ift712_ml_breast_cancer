@@ -1,29 +1,48 @@
-from __future__ import annotations
+from typing import Tuple
+
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-from src.config.config import load_dataset_config, load_training_config
-from src.utils.io import save_csv
+from src.config.config import Config
+from src.utils.paths import DATA_INTERIM_DIR
+from src.utils.logging import get_logger
+
+logger = get_logger(__name__)
 
 
-def make_splits(df: pd.DataFrame) -> None:
-    """Crée les fichiers train.csv et test.csv dans data/interim/."""
-    data_config = load_dataset_config()
-    training_config = load_training_config()
+def create_train_test_split(
+    config: Config, df: pd.DataFrame
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Create train/test splits and save them under data/interim.
+    """
+    DATA_INTERIM_DIR.mkdir(parents=True, exist_ok=True)
 
-    X = df.drop(columns=[data_config.target])
-    y = df[data_config.target]
+    target_col = config.dataset.target_column
+    X = df.drop(columns=[target_col])
+    y = df[target_col]
 
     X_train, X_test, y_train, y_test = train_test_split(
         X,
         y,
-        test_size = training_config.test_size,
-        random_state = training_config.random_seed,
+        test_size=config.training.test_size,
+        random_state=config.training.random_state,
         stratify=y,
     )
 
-    train_df = pd.concat([X_train, y_train], axis=1)
-    test_df = pd.concat([X_test, y_test], axis=1)
+    train_df = X_train.copy()
+    train_df[target_col] = y_train
 
-    save_csv(train_df, "data/interim/train.csv")
-    save_csv(test_df, "data/interim/test.csv")
+    test_df = X_test.copy()
+    test_df[target_col] = y_test
+
+    train_path = DATA_INTERIM_DIR / "train.csv"
+    test_path = DATA_INTERIM_DIR / "test.csv"
+
+    train_df.to_csv(train_path, index=False)
+    test_df.to_csv(test_path, index=False)
+
+    logger.info("Train split saved to %s", train_path)
+    logger.info("Test split saved to %s", test_path)
+
+    return train_df, test_df
