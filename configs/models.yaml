@@ -23,3 +23,11 @@ models:
       gamma:
         - "scale"
         - "auto"
+        
+  logistic:
+    use_standard_scaler: true
+    grid:
+      penalty: ["l2"]
+      C: [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
+      solver: ["lbfgs"]
+      max_iter: [1000]      

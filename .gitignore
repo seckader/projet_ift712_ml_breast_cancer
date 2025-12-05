@@ -13,13 +13,17 @@ __pycache__/
 
 # Notebooks
 .ipynb_checkpoints/
+anaconda_projects/
 
 # Data & Artifacts
 data/raw/*
 data/interim/*
 data/processed/*
 !data/**/.gitkeep
-
+models/
+*.joblib
+*.png
+*.txt
 models/artifacts/*
 models/reports/*
 !models/**/.gitkeep
