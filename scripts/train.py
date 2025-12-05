@@ -1,12 +1,7 @@
-"""
-Training script:
-- Load configs
-- Build preprocessing + Naive Bayes pipeline
-- Run GridSearchCV
-- Save the best model and CV results
-"""
-
 import importlib
+
+import sys, os
+sys.path.append(os.path.abspath("."))
 
 import pandas as pd
 from joblib import dump

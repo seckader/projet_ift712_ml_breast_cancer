@@ -23,6 +23,14 @@ models:
       gamma:
         - "scale"
         - "auto"
+
+  knn:
+    use_standard_scaler: true
+    class_path: "src.models.knn.KNNClassifier"
+    grid:
+      classifier__n_neighbors: [3, 5, 7, 9]
+      classifier__weights: ["uniform", "distance"]
+      classifier__p: [1, 2]
         
   mlp:
     use_standard_scaler: true
@@ -43,4 +51,4 @@ models:
       penalty: ["l2"]
       C: [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
       solver: ["lbfgs"]
-      max_iter: [1000]      
+      max_iter: [1000]
