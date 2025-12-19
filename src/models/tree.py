@@ -1,4 +1,3 @@
-# decisiontree.py
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -6,7 +5,7 @@ from typing import Any, Dict
 
 from sklearn.tree import DecisionTreeClassifier
 
-from .base_model import BaseClassifier
+from src.models.base_model import BaseClassifier
 
 
 @dataclass
