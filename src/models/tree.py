@@ -23,12 +23,4 @@ class DecisionTreeWrapper(BaseClassifier):
 
     def hyperparam_grid(self) -> dict:
        
-        return {
-            "classifier__criterion": ["gini", "entropy", "log_loss"],
-            "classifier__splitter": ["best", "random"],
-            "classifier__max_depth": [None, 3, 5, 8, 12],
-            "classifier__min_samples_split": [2, 5, 10],
-            "classifier__min_samples_leaf": [1, 2, 4],
-            "classifier__max_features": [None, "sqrt", "log2"],
-            "classifier__class_weight": [None, "balanced"],
-        }
+        return self._hyperparameters

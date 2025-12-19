@@ -12,6 +12,9 @@ train:
 evaluate:
 	python scripts/evaluate.py
 
+summary:
+	python scripts/build_summary.py
+
 lint:
 	ruff check . || true
 
