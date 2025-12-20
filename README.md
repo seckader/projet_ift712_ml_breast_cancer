@@ -11,7 +11,7 @@ Jeu de données :
 - Breast Cancer Wisconsin (Diagnostic)
 - 569 échantillons
 - 30 variables numériques
-- 2 classes (benign / malignant)
+- 2 classes (bénigne / maligne)
 
 
 ## Méthodes de classification évaluées
